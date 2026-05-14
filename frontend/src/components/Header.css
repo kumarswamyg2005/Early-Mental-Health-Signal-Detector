@@ -1,0 +1,94 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── Brand ── */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.header-mark {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-mark svg { width: 32px; height: 32px; }
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.header-title {
+  font-family: var(--font-display);
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.header-sub {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Right side badges ── */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hdr-badge--local {
+  background: var(--sage-subtle);
+  color: var(--sage);
+  border: 1px solid rgba(62, 108, 82, 0.18);
+}
+.hdr-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  animation: pulseDot 2.4s ease infinite;
+}
+
+.hdr-badge--private {
+  background: var(--info-bg);
+  color: var(--info);
+  border: 1px solid var(--info-border);
+}
+
+@media (max-width: 600px) {
+  .hdr-badge--private { display: none; }
+  .header-sub { display: none; }
+}

@@ -1,0 +1,146 @@
+.about-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Hero ── */
+.about-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 26px 28px;
+}
+
+.about-hero-mark {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.about-hero-mark svg { width: 48px; height: 48px; }
+
+.about-hero-title {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+.about-hero-sub {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 520px;
+}
+
+/* ── Ethics grid ── */
+.about-ethics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.about-ethics-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-ethics-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sage-subtle);
+  border-radius: var(--r-md);
+  color: var(--sage);
+  flex-shrink: 0;
+}
+.about-ethics-icon svg { width: 18px; height: 18px; }
+
+.about-ethics-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.about-ethics-body {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Shared section label ── */
+.about-section-label {
+  display: block;
+  margin-bottom: 16px;
+}
+
+/* ── Tool details ── */
+.about-details {
+  padding: 22px 24px;
+}
+.about-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+.about-detail-item {
+  padding: 11px 13px;
+  background: var(--bg-raised);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.about-detail-value {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ── Crisis resources ── */
+.about-resources {
+  padding: 22px 24px;
+}
+.about-resources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+.about-resource-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  background: var(--bg-raised);
+  border-radius: var(--r-sm);
+  border-left: 2px solid var(--sage-pale);
+}
+.about-resource-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.about-resource-detail {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.about-resource-detail em {
+  font-style: normal;
+  color: var(--text-disabled);
+}
+
+/* ── Footer ── */
+.about-footer {
+  font-size: 0.74rem;
+  color: var(--text-disabled);
+  text-align: center;
+  padding: 4px 8px 8px;
+  line-height: 1.6;
+}

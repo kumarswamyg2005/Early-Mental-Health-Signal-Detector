@@ -1,0 +1,261 @@
+.trend-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ── */
+.tv-header h2 { font-size: 1.3rem; margin-bottom: 5px; }
+.tv-header p  { font-size: 0.85rem; color: var(--text-muted); line-height: 1.65; }
+
+/* ── Disclaimer ── */
+.tv-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r-md);
+  font-size: 0.76rem;
+  color: #5A3E00;
+  line-height: 1.6;
+}
+.tv-disclaimer svg { flex-shrink: 0; margin-top: 2px; color: var(--warn); }
+
+/* ── Input card ── */
+.tv-input-card { padding: 24px 26px; }
+
+.tv-entries { display: flex; flex-direction: column; gap: 14px; }
+
+.tv-entry { display: flex; flex-direction: column; gap: 5px; }
+
+.tv-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tv-entry-label { color: var(--text-muted); }
+
+.tv-remove-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-disabled);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tv-remove-btn:hover { background: var(--risk-high-bg); color: var(--risk-high); }
+
+.tv-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  resize: vertical;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.tv-textarea::placeholder {
+  color: var(--text-disabled);
+  font-style: italic;
+}
+.tv-textarea:focus {
+  outline: none;
+  border-color: var(--sage-light);
+  box-shadow: 0 0 0 3px var(--sage-glow);
+}
+
+.tv-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.tv-add-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sage);
+  background: transparent;
+  border: 1.5px dashed rgba(62, 108, 82, 0.38);
+  border-radius: var(--r-md);
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.tv-add-btn:hover:not(:disabled) {
+  background: var(--sage-subtle);
+  border-color: var(--sage-light);
+}
+.tv-add-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.tv-analyze-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--sage);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-base);
+  box-shadow: var(--shadow-sage);
+}
+.tv-analyze-btn:hover:not(:disabled) {
+  background: var(--sage-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(62, 108, 82, 0.28);
+}
+.tv-analyze-btn:active:not(:disabled) { transform: scale(0.98); }
+.tv-analyze-btn:disabled { opacity: 0.52; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── Results ── */
+.tv-results { display: flex; flex-direction: column; gap: 14px; }
+
+.tv-summary {
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tv-summary-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.tv-summary-note {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+}
+
+/* Bar chart */
+.tv-timeline { padding: 22px 24px; }
+.tv-table-card { padding: 22px 24px; overflow-x: auto; }
+
+.tv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+}
+.tv-section-title svg { opacity: 0.65; flex-shrink: 0; }
+
+.tv-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 150px;
+}
+
+.tv-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tv-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.tv-bar {
+  width: 100%;
+  max-width: 52px;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  min-height: 4px;
+  transition: height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: barGrow 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.tv-bar-label {
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Table */
+.tv-table-wrap { overflow-x: auto; }
+
+.tv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.tv-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.tv-table td {
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--divider);
+  vertical-align: middle;
+}
+.tv-td-entry {
+  font-family: var(--font-body) !important;
+  font-weight: 500;
+  color: var(--text-primary) !important;
+}
+.tv-table tr:last-child td { border-bottom: none; }
+.tv-table tr:hover td { background: var(--bg-hover); }
+
+/* Clinical note */
+.tv-clinical-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 14px;
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  border-radius: var(--r-md);
+  font-size: 0.76rem;
+  color: var(--info);
+  line-height: 1.6;
+}
+.tv-clinical-note svg { flex-shrink: 0; margin-top: 2px; }
