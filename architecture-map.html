@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindSense — Architecture Map</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --bg-panel: #161b24;
+    --bg-card: #1c2333;
+    --bg-hover: #232b3e;
+    --border: #2a3450;
+    --border-bright: #3a4a70;
+    --text: #e2e8f0;
+    --text-muted: #8493a8;
+    --text-dim: #4a5568;
+
+    --c-client: #4a9eff;
+    --c-backend: #a78bfa;
+    --c-pipeline: #34d399;
+    --c-model: #fbbf24;
+    --c-external: #f87171;
+    --c-dead: #6b7280;
+
+    --c-client-bg: rgba(74,158,255,0.08);
+    --c-backend-bg: rgba(167,139,250,0.08);
+    --c-pipeline-bg: rgba(52,211,153,0.08);
+    --c-model-bg: rgba(251,191,36,0.08);
+    --c-external-bg: rgba(248,113,113,0.08);
+
+    --edge-critical: #ff6b6b;
+    --edge-normal: #3a4a70;
+    --edge-data: #4a9eff;
+    --edge-dead: #374151;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .topbar-title {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-right: 8px;
+  }
+  .topbar-title span { color: var(--c-pipeline); }
+
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.18s, transform 0.12s;
+    user-select: none;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .chip:hover { transform: translateY(-1px); }
+  .chip.off { opacity: 0.28; }
+
+  .chip-client   { color: var(--c-client);   border-color: var(--c-client);   background: var(--c-client-bg); }
+  .chip-backend  { color: var(--c-backend);  border-color: var(--c-backend);  background: var(--c-backend-bg); }
+  .chip-pipeline { color: var(--c-pipeline); border-color: var(--c-pipeline); background: var(--c-pipeline-bg); }
+  .chip-model    { color: var(--c-model);    border-color: var(--c-model);    background: var(--c-model-bg); }
+  .chip-external { color: var(--c-external); border-color: var(--c-external); background: var(--c-external-bg); }
+  .chip-dead     { color: var(--c-dead);     border-color: var(--c-dead);     background: rgba(107,114,128,0.08); }
+
+  .topbar-spacer { flex: 1; }
+  .topbar-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .zoom-btns { display: flex; gap: 4px; }
+  .zoom-btn {
+    width: 28px; height: 28px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    font-family: monospace;
+  }
+  .zoom-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+  /* ── Main layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Canvas ── */
+  .canvas-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+  }
+  .canvas-wrap.grabbing { cursor: grabbing; }
+
+  svg#graph {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ── Sidebar / detail panel ── */
+  .detail {
+    width: 280px;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    padding: 20px 18px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .detail-empty {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 60px;
+    text-align: center;
+    line-height: 1.8;
+  }
+  .detail-cluster-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .detail-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .detail-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    word-break: break-all;
+  }
+  .detail-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .detail-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 6px; }
+  .detail-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .detail-warn {
+    padding: 9px 12px;
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.28);
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #fca5a5;
+    line-height: 1.65;
+  }
+  .detail-info {
+    padding: 9px 12px;
+    background: rgba(74,158,255,0.08);
+    border: 1px solid rgba(74,158,255,0.22);
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #93c5fd;
+    line-height: 1.65;
+  }
+  hr.detail-hr { border: none; border-top: 1px solid var(--border); }
+
+  /* ── Legend ── */
+  .legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .legend-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); font-family: 'Segoe UI', system-ui, sans-serif; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); font-family: 'Segoe UI', system-ui, sans-serif; }
+  .legend-line { width: 28px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+  .legend-line.dashed { background: repeating-linear-gradient(90deg, var(--edge-dead) 0 4px, transparent 4px 8px); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">MindSense <span>Architecture</span></span>
+  <div class="filters">
+    <span class="chip chip-client"   data-group="client"   onclick="toggleGroup(this)">Client</span>
+    <span class="chip chip-backend"  data-group="backend"  onclick="toggleGroup(this)">Backend</span>
+    <span class="chip chip-pipeline" data-group="pipeline" onclick="toggleGroup(this)">Pipeline</span>
+    <span class="chip chip-model"    data-group="model"    onclick="toggleGroup(this)">Model</span>
+    <span class="chip chip-external" data-group="external" onclick="toggleGroup(this)">External</span>
+    <span class="chip chip-dead"     data-group="dead"     onclick="toggleGroup(this)">Dead&nbsp;code</span>
+  </div>
+  <span class="topbar-spacer"></span>
+  <span class="topbar-hint">drag to pan · scroll to zoom · click node for details</span>
+  <div class="zoom-btns">
+    <button class="zoom-btn" onclick="zoomBy(1.25)">+</button>
+    <button class="zoom-btn" onclick="zoomBy(0.8)">−</button>
+    <button class="zoom-btn" onclick="resetView()" title="Reset">⊙</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="canvas-wrap" id="canvasWrap">
+    <svg id="graph" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr-normal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3a4a70"/>
+        </marker>
+        <marker id="arr-critical" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#ff6b6b"/>
+        </marker>
+        <marker id="arr-data" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#4a9eff"/>
+        </marker>
+        <marker id="arr-dead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#374151"/>
+        </marker>
+        <filter id="glow-red">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-sage">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="viewport">
+        <!-- drawn by JS -->
+      </g>
+    </svg>
+
+    <div class="legend">
+      <div class="legend-title">Edges</div>
+      <div class="legend-row"><div class="legend-line" style="background:#ff6b6b;"></div>Critical path</div>
+      <div class="legend-row"><div class="legend-line" style="background:#4a9eff;"></div>Data / response</div>
+      <div class="legend-row"><div class="legend-line" style="background:#3a4a70;"></div>Import / call</div>
+      <div class="legend-row"><div class="legend-line dashed"></div>Dead code</div>
+    </div>
+  </div>
+
+  <div class="detail" id="detail">
+    <div class="detail-empty">Click any node<br>to see details</div>
+  </div>
+</div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const NODES = [
+  // CLIENT cluster
+  { id:'App',           group:'client',   x:60,  y:200, label:'App.jsx',             path:'frontend/src/App.jsx',
+    desc:'Root shell. Manages active view state (analyze / trend / about). Renders Header, Sidebar, and the active view.',
+    exports:['<App/>'], imports:['AnalyzeView','TrendView','AboutView','Header','Sidebar'] },
+
+  { id:'Header',        group:'client',   x:60,  y:310, label:'Header.jsx',          path:'frontend/src/components/Header.jsx',
+    desc:'Top navigation bar. Leaf-drop SVG logo, pulsing status dot, "MindSense" branding. No AI imagery.',
+    exports:['<Header/>'], imports:[] },
+
+  { id:'Sidebar',       group:'client',   x:60,  y:420, label:'Sidebar.jsx',         path:'frontend/src/components/Sidebar.jsx',
+    desc:'Left nav. Links for Analyze / Trend Analysis / About. CRISIS_LINES array of 5 Indian helplines. "For licensed professionals only" footer.',
+    exports:['<Sidebar/>'], imports:[] },
+
+  { id:'AnalyzeView',   group:'client',   x:240, y:140, label:'AnalyzeView.jsx',     path:'frontend/src/components/AnalyzeView.jsx',
+    desc:'Primary input screen. Textarea with word count validation (≥10 words). POSTs to /analyze. Renders ResultPanel on success.',
+    exports:['<AnalyzeView/>'], imports:['ResultPanel'], calls:['POST /analyze'], critical:true },
+
+  { id:'TrendView',     group:'client',   x:240, y:290, label:'TrendView.jsx',       path:'frontend/src/components/TrendView.jsx',
+    desc:'Multi-session batch view. Up to 10 textarea entries. POSTs to /analyze/batch. Bar chart + results table.',
+    exports:['<TrendView/>'], imports:['RiskBadge'], calls:['POST /analyze/batch'] },
+
+  { id:'AboutView',     group:'client',   x:240, y:420, label:'AboutView.jsx',       path:'frontend/src/components/AboutView.jsx',
+    desc:'Static informational screen. Ethics section with SVG icons (no emoji). Intended use, limitations, data handling. No AI terminology.',
+    exports:['<AboutView/>'], imports:[] },
+
+  { id:'ResultPanel',   group:'client',   x:420, y:140, label:'ResultPanel.jsx',     path:'frontend/src/components/ResultPanel.jsx',
+    desc:'Renders a full /analyze response. Sections: Confidence Scores, Risk Badge, Language Indicators (top features), Highlighted Phrases (word weights), ResourceCards.',
+    exports:['<ResultPanel/>'], imports:['RiskBadge','ScoreBar','WordHighlight','ResourceCards'], critical:true },
+
+  { id:'RiskBadge',     group:'client',   x:420, y:280, label:'RiskBadge.jsx',       path:'frontend/src/components/RiskBadge.jsx',
+    desc:'Pill badge: HIGH / MODERATE / LOW / MINIMAL. Colored dot instead of emoji. Four CSS modifier classes.',
+    exports:['<RiskBadge/>'], imports:[] },
+
+  { id:'ScoreBar',      group:'client',   x:420, y:370, label:'ScoreBar.jsx',        path:'frontend/src/components/ScoreBar.jsx',
+    desc:'Animated horizontal bar for one probability score. Props: label, value (0–1), color.',
+    exports:['<ScoreBar/>'], imports:[] },
+
+  { id:'WordHighlight', group:'client',   x:420, y:455, label:'WordHighlight.jsx',   path:'frontend/src/components/WordHighlight.jsx',
+    desc:'Renders word-weight map as inline spans. Amber = risk language; green = protective language.',
+    exports:['<WordHighlight/>'], imports:[] },
+
+  { id:'ResourceCards', group:'client',   x:420, y:540, label:'ResourceCards.jsx',   path:'frontend/src/components/ResourceCards.jsx',
+    desc:'Grid of crisis/support resource cards. Shown when resources array is non-empty. Keyed to risk level.',
+    exports:['<ResourceCards/>'], imports:[] },
+
+  // BACKEND cluster
+  { id:'main',          group:'backend',  x:640, y:200, label:'main.py',             path:'backend/main.py',
+    desc:'FastAPI app. CORS: localhost:5173 / 127.0.0.1:5173. Routes: GET /health, POST /analyze, POST /analyze/batch. Lazy-loads MentalHealthAnalyzer on first request.',
+    exports:['GET /health','POST /analyze','POST /analyze/batch'], imports:['MentalHealthAnalyzer'], critical:true },
+
+  // PIPELINE cluster
+  { id:'analyze_py',    group:'pipeline', x:860, y:160, label:'analyze.py',          path:'pipeline/analyze.py',
+    desc:'Core inference class MentalHealthAnalyzer. Key methods: analyze(text) → full inference with LIME, analyze_batch(texts) → lightweight batch, _predict_batch(), _get_lime_weights(), get_risk_level(), RISK_RESOURCES dict (Indian crisis lines).',
+    exports:['MentalHealthAnalyzer'], imports:['MentalHealthClassifier','extract_features','LimeTextExplainer'], critical:true },
+
+  { id:'build_html',    group:'dead',     x:860, y:320, label:'build_highlighted_html()',  path:'pipeline/analyze.py:196',
+    desc:'DEAD CODE — generates HTML highlight spans for the old Streamlit app.py. Not imported by backend/main.py. Safe to delete once app.py is removed.',
+    exports:[], imports:[], dead:true },
+
+  { id:'features_py',   group:'pipeline', x:860, y:430, label:'features.py',         path:'pipeline/features.py',
+    desc:'extract_features(text) → float32[8]. Features: word_count_norm, first_person_rate, neg_word_ratio, pos_word_ratio, crisis_word_ratio, cogproc_rate, neg_pos_diff, avg_sentence_length_norm. Inline frozenset word lists — no LIWC license required.',
+    exports:['extract_features','describe_features','top_notable_features'], imports:[], critical:true },
+
+  // MODEL cluster
+  { id:'model_py',      group:'model',    x:1080,y:200, label:'model.py',            path:'models/model.py',
+    desc:'MentalHealthClassifier(nn.Module). BERT-base-uncased (768-d CLS) + ling_proj Linear(8→32)+ReLU → concat 800-d → Linear(800→256)+GELU+Dropout(0.3)+Linear(256→4). LABEL_NAMES = [depression, anxiety, crisis, neutral].',
+    exports:['MentalHealthClassifier','LABEL_NAMES'], imports:['bert-base-uncased'], critical:true },
+
+  { id:'train_py',      group:'model',    x:1080,y:360, label:'train.py',            path:'models/train.py',
+    desc:'Training pipeline. Data sources tried in order: HuggingFace imancheema/Reddit-Mental-Health-Dataset → ShreyaR/reddit-mental-health-dataset → local CSV → synthetic fallback. AdamW lr=2e-5, 5 epochs, batch 16, max_len 256, gradient clip 1.0. Saves bert/, tokenizer/, head.pt + evaluation plots.',
+    exports:[], imports:['MentalHealthClassifier','bert-base-uncased','HF datasets'] },
+
+  // EXTERNAL cluster
+  { id:'bert',          group:'external', x:1280,y:180, label:'bert-base-uncased',   path:'HuggingFace Hub',
+    desc:'Pre-trained BERT base model (uncased). 110M parameters. Used as frozen/fine-tuned encoder. Downloaded to models/saved/bert/ during training.',
+    exports:['BertModel','BertTokenizer'], imports:[] },
+
+  { id:'lime',          group:'external', x:1280,y:300, label:'LimeTextExplainer',   path:'pip: lime',
+    desc:'Local Interpretable Model-agnostic Explanations. Lazy-initialized in MentalHealthAnalyzer. Used only in analyze() (single text), not analyze_batch(). num_lime_samples defaults to 50.',
+    exports:['LimeTextExplainer'], imports:[] },
+
+  { id:'hf_data',       group:'external', x:1280,y:420, label:'HF Datasets',         path:'HuggingFace Hub',
+    desc:'Reddit Mental Health subreddit data. Two dataset IDs tried: imancheema/Reddit-Mental-Health-Dataset → ShreyaR/reddit-mental-health-dataset. Used only at training time; not required at inference.',
+    exports:['dataset'], imports:[] },
+
+  // DEAD artifact
+  { id:'app_py',        group:'dead',     x:640, y:480, label:'app.py',              path:'app.py (repo root)',
+    desc:'SUPERSEDED — original 1000-line Streamlit dashboard. Still present in the repo but no longer the active UI. The React frontend + FastAPI backend replaces it entirely. Can be safely removed.',
+    exports:[], imports:['build_highlighted_html'], dead:true },
+];
+
+const EDGES = [
+  // Critical path — frontend → backend → pipeline → model
+  { from:'AnalyzeView',  to:'main',        type:'critical', label:'POST /analyze' },
+  { from:'main',         to:'analyze_py',  type:'critical', label:'analyze()' },
+  { from:'analyze_py',   to:'features_py', type:'critical', label:'extract_features()' },
+  { from:'analyze_py',   to:'model_py',    type:'critical', label:'_predict_batch()' },
+  { from:'analyze_py',   to:'lime',        type:'normal',   label:'_get_lime_weights()' },
+  { from:'model_py',     to:'bert',        type:'normal',   label:'BERT encoder' },
+  { from:'main',         to:'ResultPanel', type:'data',     label:'JSON response' },
+
+  // Batch path
+  { from:'TrendView',    to:'main',        type:'normal',   label:'POST /analyze/batch' },
+
+  // Component tree
+  { from:'App',          to:'AnalyzeView', type:'normal',   label:'renders' },
+  { from:'App',          to:'TrendView',   type:'normal',   label:'renders' },
+  { from:'App',          to:'AboutView',   type:'normal',   label:'renders' },
+  { from:'App',          to:'Header',      type:'normal',   label:'renders' },
+  { from:'App',          to:'Sidebar',     type:'normal',   label:'renders' },
+  { from:'AnalyzeView',  to:'ResultPanel', type:'normal',   label:'result prop' },
+  { from:'ResultPanel',  to:'RiskBadge',   type:'normal',   label:'renders' },
+  { from:'ResultPanel',  to:'ScoreBar',    type:'normal',   label:'renders' },
+  { from:'ResultPanel',  to:'WordHighlight',type:'normal',  label:'renders' },
+  { from:'ResultPanel',  to:'ResourceCards',type:'normal',  label:'renders' },
+  { from:'TrendView',    to:'RiskBadge',   type:'normal',   label:'renders' },
+
+  // Model → HF
+  { from:'train_py',     to:'bert',        type:'normal',   label:'fine-tune' },
+  { from:'train_py',     to:'hf_data',     type:'normal',   label:'dataset' },
+  { from:'train_py',     to:'model_py',    type:'normal',   label:'trains' },
+
+  // Dead code edges
+  { from:'app_py',       to:'build_html',  type:'dead',     label:'calls (dead)' },
+  { from:'build_html',   to:'app_py',      type:'dead',     label:'only caller' },
+];
+
+// ── Layout helpers ───────────────────────────────────────────────────────────
+const nodeById = {};
+NODES.forEach(n => nodeById[n.id] = n);
+
+// ── Pan/zoom state ───────────────────────────────────────────────────────────
+let tx = 0, ty = 0, scale = 0.78;
+let dragging = false, lastX = 0, lastY = 0;
+
+const wrap   = document.getElementById('canvasWrap');
+const svg    = document.getElementById('graph');
+const vp     = document.getElementById('viewport');
+const detail = document.getElementById('detail');
+
+function applyTransform() {
+  vp.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`);
+}
+
+function zoomBy(factor) {
+  const rect = svg.getBoundingClientRect();
+  const cx = rect.width  / 2;
+  const cy = rect.height / 2;
+  tx = cx - (cx - tx) * factor;
+  ty = cy - (cy - ty) * factor;
+  scale *= factor;
+  applyTransform();
+}
+
+function resetView() {
+  tx = 40; ty = 40; scale = 0.78;
+  applyTransform();
+}
+
+wrap.addEventListener('mousedown', e => {
+  if (e.target.closest('.node-g')) return;
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  wrap.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  tx += e.clientX - lastX;
+  ty += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; wrap.classList.remove('grabbing'); });
+
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.1 : 0.91;
+  tx = mx - (mx - tx) * factor;
+  ty = my - (my - ty) * factor;
+  scale *= factor;
+  applyTransform();
+}, { passive: false });
+
+// ── Group visibility ─────────────────────────────────────────────────────────
+const groupVis = {};
+['client','backend','pipeline','model','external','dead'].forEach(g => groupVis[g] = true);
+
+function toggleGroup(chip) {
+  const g = chip.dataset.group;
+  groupVis[g] = !groupVis[g];
+  chip.classList.toggle('off', !groupVis[g]);
+  render();
+}
+
+// ── Color helpers ─────────────────────────────────────────────────────────────
+const GROUP_COLOR = {
+  client:   '#4a9eff',
+  backend:  '#a78bfa',
+  pipeline: '#34d399',
+  model:    '#fbbf24',
+  external: '#f87171',
+  dead:     '#4b5563',
+};
+const GROUP_BG = {
+  client:   'rgba(74,158,255,0.07)',
+  backend:  'rgba(167,139,250,0.07)',
+  pipeline: 'rgba(52,211,153,0.07)',
+  model:    'rgba(251,191,36,0.07)',
+  external: 'rgba(248,113,113,0.07)',
+  dead:     'rgba(75,85,99,0.07)',
+};
+
+// ── SVG helpers ───────────────────────────────────────────────────────────────
+function svgEl(tag, attrs={}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+  return el;
+}
+
+// ── Edge routing ──────────────────────────────────────────────────────────────
+function nodeRect(n) {
+  const w = 160, h = 44;
+  return { x: n.x, y: n.y, w, h, cx: n.x + w/2, cy: n.y + h/2 };
+}
+
+function edgePoints(from, to) {
+  const a = nodeRect(from), b = nodeRect(to);
+  // Pick nearest horizontal side
+  const exitRight = a.cx < b.cx;
+  const sx = exitRight ? a.x + a.w : a.x;
+  const sy = a.cy;
+  const ex = exitRight ? b.x : b.x + b.w;
+  const ey = b.cy;
+  const dx = Math.abs(ex - sx) * 0.5;
+  return `M${sx},${sy} C${sx + (exitRight?dx:-dx)},${sy} ${ex + (exitRight?-dx:dx)},${ey} ${ex},${ey}`;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+let selectedId = null;
+
+function render() {
+  while (vp.firstChild) vp.removeChild(vp.firstChild);
+
+  // Cluster backgrounds
+  const clusters = {};
+  NODES.forEach(n => {
+    if (!groupVis[n.group]) return;
+    if (!clusters[n.group]) clusters[n.group] = { minX:Infinity, minY:Infinity, maxX:-Infinity, maxY:-Infinity };
+    const r = nodeRect(n);
+    clusters[n.group].minX = Math.min(clusters[n.group].minX, r.x - 16);
+    clusters[n.group].minY = Math.min(clusters[n.group].minY, r.y - 28);
+    clusters[n.group].maxX = Math.max(clusters[n.group].maxX, r.x + r.w + 16);
+    clusters[n.group].maxY = Math.max(clusters[n.group].maxY, r.y + r.h + 16);
+  });
+
+  const clusterLabels = { client:'Client (React)', backend:'Backend (FastAPI)', pipeline:'Pipeline', model:'Model', external:'External', dead:'Superseded / Dead' };
+
+  Object.entries(clusters).forEach(([g, b]) => {
+    const rect = svgEl('rect', {
+      x: b.minX, y: b.minY,
+      width:  b.maxX - b.minX,
+      height: b.maxY - b.minY,
+      rx: 12,
+      fill: GROUP_BG[g],
+      stroke: GROUP_COLOR[g],
+      'stroke-width': 1,
+      'stroke-dasharray': g === 'dead' ? '5,4' : '',
+      opacity: 0.7,
+    });
+    vp.appendChild(rect);
+
+    const lbl = svgEl('text', {
+      x: b.minX + 10,
+      y: b.minY + 17,
+      fill: GROUP_COLOR[g],
+      'font-size': 10,
+      'font-family': "'Segoe UI', system-ui, sans-serif",
+      'font-weight': 700,
+      'letter-spacing': '0.06em',
+      opacity: 0.85,
+    });
+    lbl.textContent = clusterLabels[g]?.toUpperCase() || g.toUpperCase();
+    vp.appendChild(lbl);
+  });
+
+  // Edges
+  const EDGE_STYLE = {
+    critical: { stroke:'#ff6b6b', width:2.2, dasharray:'', marker:'arr-critical' },
+    data:     { stroke:'#4a9eff', width:1.8, dasharray:'', marker:'arr-data' },
+    normal:   { stroke:'#3a4a70', width:1.4, dasharray:'', marker:'arr-normal' },
+    dead:     { stroke:'#374151', width:1.2, dasharray:'5,4', marker:'arr-dead' },
+  };
+
+  EDGES.forEach(e => {
+    const from = nodeById[e.from], to = nodeById[e.to];
+    if (!from || !to) return;
+    if (!groupVis[from.group] || !groupVis[to.group]) return;
+
+    const s = EDGE_STYLE[e.type] || EDGE_STYLE.normal;
+    const d = edgePoints(from, to);
+
+    const path = svgEl('path', {
+      d,
+      fill: 'none',
+      stroke: s.stroke,
+      'stroke-width': s.width,
+      'stroke-dasharray': s.dasharray,
+      'marker-end': `url(#${s.marker})`,
+      opacity: e.type === 'dead' ? 0.4 : 0.75,
+    });
+    vp.appendChild(path);
+
+    // Edge label
+    if (e.label) {
+      const fromR = nodeRect(from), toR = nodeRect(to);
+      const mx = (fromR.cx + toR.cx) / 2;
+      const my = (fromR.cy + toR.cy) / 2 - 7;
+
+      const bg = svgEl('rect', {
+        x: mx - 34, y: my - 9, width: 68, height: 14,
+        rx: 3, fill: '#0f1117', opacity: 0.72,
+      });
+      vp.appendChild(bg);
+
+      const lbl = svgEl('text', {
+        x: mx, y: my + 2,
+        'text-anchor': 'middle',
+        fill: s.stroke,
+        'font-size': 9,
+        'font-family': "'SF Mono','Fira Code',monospace",
+        opacity: e.type === 'dead' ? 0.45 : 0.9,
+      });
+      lbl.textContent = e.label;
+      vp.appendChild(lbl);
+    }
+  });
+
+  // Nodes
+  NODES.forEach(n => {
+    if (!groupVis[n.group]) return;
+    const r = nodeRect(n);
+    const color = GROUP_COLOR[n.group];
+    const isSelected = n.id === selectedId;
+    const isDead = n.dead;
+
+    const g = svgEl('g', { class:'node-g', style:'cursor:pointer' });
+
+    const rect = svgEl('rect', {
+      x: r.x, y: r.y, width: r.w, height: r.h,
+      rx: 7,
+      fill: isSelected ? (isDead ? 'rgba(75,85,99,0.25)' : `${color}18`) : '#1c2333',
+      stroke: isSelected ? color : (isDead ? '#374151' : '#2a3450'),
+      'stroke-width': isSelected ? 1.8 : 1,
+      opacity: isDead ? 0.65 : 1,
+      filter: n.critical ? 'url(#glow-sage)' : '',
+    });
+    g.appendChild(rect);
+
+    // Color bar on left
+    const bar = svgEl('rect', {
+      x: r.x, y: r.y, width: 3, height: r.h,
+      rx: 7,
+      fill: color,
+      opacity: isDead ? 0.3 : 0.9,
+    });
+    g.appendChild(bar);
+
+    // Label
+    const txt = svgEl('text', {
+      x: r.x + 14, y: r.y + 16,
+      fill: isDead ? '#6b7280' : (isSelected ? color : '#e2e8f0'),
+      'font-size': 11,
+      'font-family': "'SF Mono','Fira Code',monospace",
+      'font-weight': isSelected ? 700 : 500,
+    });
+    txt.textContent = n.label;
+    g.appendChild(txt);
+
+    // Sub-label: path
+    const sub = svgEl('text', {
+      x: r.x + 14, y: r.y + 30,
+      fill: '#4a5568',
+      'font-size': 9,
+      'font-family': "'SF Mono','Fira Code',monospace",
+    });
+    sub.textContent = n.path.length > 26 ? '…' + n.path.slice(-24) : n.path;
+    g.appendChild(sub);
+
+    // Dead badge
+    if (isDead) {
+      const badge = svgEl('text', {
+        x: r.x + r.w - 6, y: r.y + 15,
+        'text-anchor': 'end',
+        fill: '#6b7280',
+        'font-size': 9,
+        'font-family': "'Segoe UI', system-ui, sans-serif",
+        'font-weight': 700,
+      });
+      badge.textContent = 'DEAD';
+      g.appendChild(badge);
+    }
+
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      selectedId = (selectedId === n.id) ? null : n.id;
+      render();
+      showDetail(selectedId ? n : null);
+    });
+
+    vp.appendChild(g);
+  });
+}
+
+function showDetail(n) {
+  if (!n) {
+    detail.innerHTML = '<div class="detail-empty">Click any node<br>to see details</div>';
+    return;
+  }
+  const color = GROUP_COLOR[n.group];
+  let html = `
+    <div class="detail-name">
+      <span class="detail-cluster-dot" style="background:${color}"></span>
+      ${n.label}
+    </div>
+    <div class="detail-path">${n.path}</div>
+    <div class="detail-desc">${n.desc}</div>
+  `;
+
+  if (n.dead) {
+    html += `<div class="detail-warn">⚠ ${n.id === 'app_py'
+      ? 'Superseded artifact. The React + FastAPI stack replaces this file. Remove after confirming no remaining callers.'
+      : 'Dead function — zero callers in backend/main.py or any active module. Called only by app.py (itself superseded).'
+    }</div>`;
+  }
+
+  if (n.critical) {
+    html += `<div class="detail-info">On the critical inference path. Changes here affect every /analyze request.</div>`;
+  }
+
+  const incoming = EDGES.filter(e => e.to === n.id && groupVis[nodeById[e.from]?.group]);
+  const outgoing = EDGES.filter(e => e.from === n.id && groupVis[nodeById[e.to]?.group]);
+
+  if (incoming.length) {
+    html += `<hr class="detail-hr"><div class="detail-section">Called by / rendered by</div>`;
+    incoming.forEach(e => {
+      html += `<span class="detail-tag" style="background:rgba(42,52,80,0.8);color:#8493a8;border:1px solid #2a3450">← ${e.from}</span>`;
+    });
+  }
+  if (outgoing.length) {
+    html += `<hr class="detail-hr"><div class="detail-section">Calls / renders</div>`;
+    outgoing.forEach(e => {
+      const c = { critical:'#ff6b6b', data:'#4a9eff', dead:'#4b5563', normal:'#3a4a70' }[e.type];
+      html += `<span class="detail-tag" style="background:${c}18;color:${c};border:1px solid ${c}44">${e.to} <span style="opacity:0.55;font-size:10px">${e.label||''}</span></span>`;
+    });
+  }
+
+  if (n.exports?.length) {
+    html += `<hr class="detail-hr"><div class="detail-section">Exports</div>`;
+    n.exports.forEach(ex => {
+      html += `<span class="detail-tag" style="background:rgba(52,211,153,0.08);color:#34d399;border:1px solid rgba(52,211,153,0.25);font-family:monospace">${ex}</span>`;
+    });
+  }
+
+  detail.innerHTML = html;
+}
+
+svg.addEventListener('click', () => {
+  selectedId = null;
+  render();
+  showDetail(null);
+});
+
+// Initial render
+render();
+resetView();
+</script>
+</body>
+</html>
